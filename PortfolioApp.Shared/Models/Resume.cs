@@ -1,0 +1,11 @@
+namespace PortfolioApp.Shared.Models;
+
+public class Resume
+{
+    public int Id { get; set; }
+    public string FileName { get; set; } = string.Empty;
+    public string FileContentBase64 { get; set; } = string.Empty;
+    public string ContentType { get; set; } = "application/pdf";
+    public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
+    public int PortfolioId { get; set; }
+}

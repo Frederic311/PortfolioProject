@@ -1,0 +1,281 @@
+### Variables
+@baseUrl = http://localhost:5158
+@portfolioId = 1
+@projectId = 1
+@skillId = 1
+@toolId = 1
+
+### ===========================================
+### PORTFOLIOS
+### ===========================================
+
+### Get all portfolios
+GET {{baseUrl}}/api/portfolios
+
+### Get portfolio by id
+GET {{baseUrl}}/api/portfolios/{{portfolioId}}
+
+### Create a new portfolio
+POST {{baseUrl}}/api/portfolios
+Content-Type: application/json
+
+{
+  "name": "Mon Portfolio",
+  "slogan": "Développeur Full-Stack .NET & Blazor",
+  "description": "Portfolio de démonstration avec projets variés",
+  "photoBase64": null
+}
+
+### Update portfolio
+PUT {{baseUrl}}/api/portfolios/{{portfolioId}}
+Content-Type: application/json
+
+{
+  "name": "Mon Portfolio Mis à jour",
+  "slogan": "Expert .NET & Azure",
+  "description": "Description mise à jour avec nouvelles compétences",
+  "photoBase64": null
+}
+
+### Delete portfolio
+DELETE {{baseUrl}}/api/portfolios/{{portfolioId}}
+
+### ===========================================
+### SKILLS
+### ===========================================
+
+### Get all skills
+GET {{baseUrl}}/api/skills
+
+### Get skills by portfolio
+GET {{baseUrl}}/api/skills/portfolio/{{portfolioId}}
+
+### Get skill by id
+GET {{baseUrl}}/api/skills/{{skillId}}
+
+### Create a new skill
+POST {{baseUrl}}/api/skills
+Content-Type: application/json
+
+{
+  "name": "Languages",
+  "portfolioId": {{portfolioId}}
+}
+
+### Update skill
+PUT {{baseUrl}}/api/skills/{{skillId}}
+Content-Type: application/json
+
+{
+  "name": "Programming Languages"
+}
+
+### Delete skill
+DELETE {{baseUrl}}/api/skills/{{skillId}}
+
+### ===========================================
+### TOOLS
+### ===========================================
+
+### Get all tools
+GET {{baseUrl}}/api/tools
+
+### Get tools by skill
+GET {{baseUrl}}/api/tools/skill/{{skillId}}
+
+### Get tool by id
+GET {{baseUrl}}/api/tools/{{toolId}}
+
+### Create a new tool
+POST {{baseUrl}}/api/tools
+Content-Type: application/json
+
+{
+  "name": "TypeScript",
+  "skillId": {{skillId}}
+}
+
+### Create another tool
+POST {{baseUrl}}/api/tools
+Content-Type: application/json
+
+{
+  "name": "Python",
+  "skillId": {{skillId}}
+}
+
+### Update tool
+PUT {{baseUrl}}/api/tools/{{toolId}}
+Content-Type: application/json
+
+{
+  "name": "JavaScript/TypeScript"
+}
+
+### Delete tool
+DELETE {{baseUrl}}/api/tools/{{toolId}}
+
+### ===========================================
+### PROJECTS
+### ===========================================
+
+### Get all projects
+GET {{baseUrl}}/api/projects
+
+### Get projects by portfolio
+GET {{baseUrl}}/api/projects/portfolio/{{portfolioId}}
+
+### Get project by id
+GET {{baseUrl}}/api/projects/{{projectId}}
+
+### Create a new project
+POST {{baseUrl}}/api/projects
+Content-Type: application/json
+
+{
+  "name": "E-commerce Platform",
+  "description": "Application e-commerce complète avec panier et paiement",
+  "status": "EnCours",
+  "startDate": "2025-01-01T00:00:00",
+  "endDate": null,
+  "portfolioId": {{portfolioId}},
+  "toolIds": [1, 2]
+}
+
+### Update project
+PUT {{baseUrl}}/api/projects/{{projectId}}
+Content-Type: application/json
+
+{
+  "name": "E-commerce Platform v2",
+  "description": "Application e-commerce avec nouvelles fonctionnalités",
+  "status": "Termine",
+  "startDate": "2025-01-01T00:00:00",
+  "endDate": "2025-06-30T00:00:00",
+  "toolIds": [1, 2, 3]
+}
+
+### Add image to project
+POST {{baseUrl}}/api/projects/{{projectId}}/images
+Content-Type: application/json
+
+{
+  "imageBase64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+  "caption": "Screenshot de la page d'accueil",
+  "order": 1
+}
+
+### Delete image from project
+DELETE {{baseUrl}}/api/projects/{{projectId}}/images/1
+
+### Delete project
+DELETE {{baseUrl}}/api/projects/{{projectId}}
+
+### ===========================================
+### WORKFLOW COMPLET - Créer un portfolio avec tout
+### ===========================================
+
+### 1. Créer un portfolio
+POST {{baseUrl}}/api/portfolios
+Content-Type: application/json
+
+{
+  "name": "Frederic Portfolio",
+  "slogan": "Full-Stack Developer | .NET Expert",
+  "description": "Passionné par le développement web et cloud",
+  "photoBase64": null
+}
+
+### 2. Créer une skill "Languages"
+# Note: Remplacer portfolioId avec l'ID retourné à l'étape 1
+POST {{baseUrl}}/api/skills
+Content-Type: application/json
+
+{
+  "name": "Languages",
+  "portfolioId": 1
+}
+
+### 3. Créer des tools pour cette skill
+# Note: Remplacer skillId avec l'ID retourné à l'étape 2
+POST {{baseUrl}}/api/tools
+Content-Type: application/json
+
+{
+  "name": "C#",
+  "skillId": 1
+}
+
+###
+POST {{baseUrl}}/api/tools
+Content-Type: application/json
+
+{
+  "name": "TypeScript",
+  "skillId": 1
+}
+
+###
+POST {{baseUrl}}/api/tools
+Content-Type: application/json
+
+{
+  "name": "Python",
+  "skillId": 1
+}
+
+### 4. Créer une skill "Frameworks"
+POST {{baseUrl}}/api/skills
+Content-Type: application/json
+
+{
+  "name": "Frameworks",
+  "portfolioId": 1
+}
+
+### 5. Créer des tools pour Frameworks
+POST {{baseUrl}}/api/tools
+Content-Type: application/json
+
+{
+  "name": ".NET",
+  "skillId": 2
+}
+
+###
+POST {{baseUrl}}/api/tools
+Content-Type: application/json
+
+{
+  "name": "Blazor",
+  "skillId": 2
+}
+
+###
+POST {{baseUrl}}/api/tools
+Content-Type: application/json
+
+{
+  "name": "React",
+  "skillId": 2
+}
+
+### 6. Créer un projet
+POST {{baseUrl}}/api/projects
+Content-Type: application/json
+
+{
+  "name": "Portfolio Management App",
+  "description": "Application de gestion de portfolios avec Blazor et .NET",
+  "status": "EnCours",
+  "startDate": "2025-11-01T00:00:00",
+  "endDate": null,
+  "portfolioId": 1,
+  "toolIds": [1, 4, 5]
+}
+
+### 7. Voir le portfolio complet avec tous les skills
+GET {{baseUrl}}/api/skills/portfolio/1
+
+### 8. Voir tous les projets du portfolio
+GET {{baseUrl}}/api/projects/portfolio/1

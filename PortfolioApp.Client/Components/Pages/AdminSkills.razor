@@ -1,0 +1,372 @@
+﻿@page "/admin/skills"
+@inject IAuthService AuthService
+@inject ISkillService SkillService
+@inject IToolService ToolService
+@inject NavigationManager Navigation
+@inject ToastService ToastService
+@using PortfolioApp.Shared.DTOs
+
+<PageTitle>Manage Skills & Tools</PageTitle>
+
+<div class="min-h-screen bg-[#101e22]">
+    <nav class="bg-white/5 border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+    <div class="flex items-center gap-3">
+    <a href="/admin/dashboard" class="text-gray-400 hover:text-white">← Dashboard</a>
+      <span class="text-gray-600">/</span>
+          <h1 class="text-white text-xl font-bold">Skills & Tools</h1>
+       </div>
+          <button @onclick="OpenAddSkillModal" class="px-4 py-2 rounded-lg bg-[#0db9f2] text-[#101e22] font-semibold hover:opacity-90">
+        + Add Skill
+     </button>
+      </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        @if (_isLoading)
+     {
+ <div class="flex items-center justify-center py-24">
+           <svg class="animate-spin h-12 w-12 text-[#0db9f2]" fill="none" viewBox="0 0 24 24">
+       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+     </svg>
+            </div>
+        }
+      else if (!_skills.Any())
+        {
+    <div class="text-center py-24">
+   <p class="text-gray-400 mb-4">No skills yet</p>
+      <button @onclick="OpenAddSkillModal" class="px-6 py-3 rounded-lg bg-[#0db9f2] text-[#101e22] font-semibold hover:opacity-90">
+ Create Your First Skill
+        </button>
+            </div>
+  }
+        else
+  {
+       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+     @foreach (var skill in _skills)
+ {
+            <div class="bg-white/5 rounded-lg p-6 border border-white/10">
+   <!-- Header du Skill -->
+    <div class="flex items-center justify-between mb-4">
+     <h3 class="text-white font-bold text-lg">@skill.Name</h3>
+       <div class="flex gap-2">
+  <button @onclick="() => OpenEditSkillModal(skill)" 
+             class="text-sm text-gray-400 hover:text-white transition-colors">
+   Edit
+   </button>
+        <button @onclick="() => DeleteSkill(skill.Id)" 
+          class="text-sm text-red-400 hover:text-red-300 transition-colors">
+    Delete
+   </button>
+      </div>
+        </div>
+
+            <!-- Tools du Skill -->
+      <div class="flex flex-wrap gap-2">
+      @if (skill.Tools.Any())
+         {
+      @foreach (var tool in skill.Tools)
+  {
+    <span class="px-3 py-1.5 rounded-full bg-[#0db9f2]/20 text-[#0db9f2] text-sm flex items-center gap-2">
+     @tool.Name
+    <button @onclick="() => DeleteTool(tool.Id)" 
+      class="text-red-400 hover:text-red-300 font-bold">×</button>
+    </span>
+   }
+           }
+
+<!-- Bouton ajouter Tool -->
+      <button @onclick="() => OpenAddToolModal(skill.Id)" 
+          class="px-3 py-1.5 rounded-full border border-dashed border-white/30 text-gray-400 text-sm hover:border-[#0db9f2] hover:text-[#0db9f2] transition-colors">
+             + Add tool
+   </button>
+         </div>
+   </div>
+      }
+            </div>
+ }
+    </div>
+
+    <!-- Modal Add/Edit Skill -->
+    @if (_showSkillModal)
+    {
+        <div class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" @onclick="CloseModals">
+            <div class="bg-[#101e22] rounded-lg p-6 max-w-md w-full border border-white/10" @onclick:stopPropagation>
+     <h2 class="text-white text-2xl font-bold mb-6">@(_editingSkill == null ? "Add Skill" : "Edit Skill")</h2>
+          
+    <EditForm Model="@_skillForm" OnValidSubmit="HandleSkillSubmit" FormName="skillForm" class="space-y-4">
+  <DataAnnotationsValidator />
+    
+       <div>
+      <label class="block text-sm font-medium text-gray-300 mb-2">Skill Name</label>
+            <InputText @bind-Value="_skillForm.Name" 
+           class="w-full px-4 py-2 rounded-lg bg-white/10 text-white border border-white/20 focus:ring-2 focus:ring-[#0db9f2] outline-none" 
+   placeholder="ex: Languages, Frameworks, Databases" />
+            <ValidationMessage For="@(() => _skillForm.Name)" class="text-red-300 text-sm mt-1" />
+          </div>
+
+     @if (_editingSkill == null)
+ {
+    <div>
+      <label class="block text-sm font-medium text-gray-300 mb-2">Initial Tools (optional)</label>
+        <InputText @bind-Value="_skillForm.ToolNames" 
+  class="w-full px-4 py-2 rounded-lg bg-white/10 text-white border border-white/20 focus:ring-2 focus:ring-[#0db9f2] outline-none" 
+   placeholder="Python, JavaScript, TypeScript" />
+ <p class="text-xs text-gray-400 mt-1">Separate multiple tools with commas</p>
+            </div>
+         }
+
+         <div class="flex gap-3 pt-2">
+    <button type="submit" disabled="@_isSaving" 
+   class="flex-1 px-4 py-2 rounded-lg bg-[#0db9f2] text-[#101e22] font-semibold hover:opacity-90 disabled:opacity-50">
+    @(_isSaving ? "Saving..." : "Save")
+    </button>
+        <button type="button" @onclick="CloseModals" 
+         class="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20">
+   Cancel
+     </button>
+            </div>
+       </EditForm>
+    </div>
+        </div>
+    }
+
+    <!-- Modal Add Tool -->
+    @if (_showToolModal)
+    {
+        <div class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" @onclick="CloseModals">
+    <div class="bg-[#101e22] rounded-lg p-6 max-w-md w-full border border-white/10" @onclick:stopPropagation>
+         <h2 class="text-white text-2xl font-bold mb-6">Add Tool</h2>
+ 
+                <EditForm Model="@_toolForm" OnValidSubmit="HandleToolSubmit" FormName="toolForm" class="space-y-4">
+ <DataAnnotationsValidator />
+  
+      <div>
+    <label class="block text-sm font-medium text-gray-300 mb-2">Tool Name</label>
+    <InputText @bind-Value="_toolForm.Name" 
+   class="w-full px-4 py-2 rounded-lg bg-white/10 text-white border border-white/20 focus:ring-2 focus:ring-[#0db9f2] outline-none" 
+     placeholder="ex: Python, React, Docker" />
+   <ValidationMessage For="@(() => _toolForm.Name)" class="text-red-300 text-sm mt-1" />
+          </div>
+
+     <div class="flex gap-3 pt-2">
+         <button type="submit" disabled="@_isSaving" 
+   class="flex-1 px-4 py-2 rounded-lg bg-[#0db9f2] text-[#101e22] font-semibold hover:opacity-90 disabled:opacity-50">
+           @(_isSaving ? "Adding..." : "Add Tool")
+ </button>
+ <button type="button" @onclick="CloseModals" 
+      class="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20">
+           Cancel
+              </button>
+  </div>
+          </EditForm>
+   </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<SkillDto> _skills = new();
+    private bool _isLoading = true;
+    private bool _showSkillModal = false;
+    private bool _showToolModal = false;
+    private bool _isSaving = false;
+    private SkillDto? _editingSkill;
+    private int _selectedSkillId;
+    private SkillFormModel _skillForm = new();
+    private ToolFormModel _toolForm = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+     if (firstRender)
+     {
+            if (!await AuthService.IsAuthenticatedAsync())
+  {
+         Navigation.NavigateTo("/admin");
+   return;
+            }
+      await LoadSkills();
+        }
+    }
+
+    private async Task LoadSkills()
+    {
+        _isLoading = true;
+      try
+        {
+    _skills = await SkillService.GetAllAsync();
+        }
+      catch (Exception ex)
+ {
+   ToastService.ShowError($"❌ Failed to load: {ex.Message}");
+        }
+      finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+    }
+    }
+
+    // === SKILL CRUD ===
+
+    private void OpenAddSkillModal()
+    {
+   _editingSkill = null;
+     _skillForm = new();
+    _showSkillModal = true;
+    }
+
+    private void OpenEditSkillModal(SkillDto skill)
+    {
+      _editingSkill = skill;
+        _skillForm = new() { Name = skill.Name, PortfolioId = skill.PortfolioId };
+        _showSkillModal = true;
+    }
+
+    private async Task HandleSkillSubmit()
+    {
+        _isSaving = true;
+     try
+        {
+            var dto = new SkillDto
+        {
+   Name = _skillForm.Name,
+                PortfolioId = _skillForm.PortfolioId ?? 1
+};
+
+       if (_editingSkill != null)
+            {
+    // Update existing skill
+                await SkillService.UpdateAsync(_editingSkill.Id, dto);
+        ToastService.ShowSuccess($"✅ Skill '{dto.Name}' updated!");
+            }
+   else
+       {
+        // Create new skill
+    var createdSkill = await SkillService.CreateAsync(dto);
+
+      // Create initial tools if provided
+           if (!string.IsNullOrWhiteSpace(_skillForm.ToolNames))
+                {
+    var toolNames = _skillForm.ToolNames.Split(',')
+        .Select(t => t.Trim())
+             .Where(t => !string.IsNullOrEmpty(t));
+
+         foreach (var toolName in toolNames)
+    {
+      var toolDto = new ToolDto
+       {
+         Name = toolName,
+        SkillId = createdSkill.Id
+        };
+          await ToolService.CreateAsync(toolDto);
+   }
+    }
+
+        ToastService.ShowSuccess($"🎉 Skill '{dto.Name}' created!");
+            }
+
+        await LoadSkills();
+   CloseModals();
+        }
+        catch (Exception ex)
+     {
+      ToastService.ShowError($"❌ Failed: {ex.Message}");
+        }
+    finally
+   {
+    _isSaving = false;
+}
+    }
+
+    private async Task DeleteSkill(int id)
+    {
+        try
+        {
+   await SkillService.DeleteAsync(id);
+  ToastService.ShowSuccess("✅ Skill deleted!");
+  await LoadSkills();
+        }
+        catch (Exception ex)
+        {
+     ToastService.ShowError($"❌ Failed: {ex.Message}");
+        }
+    }
+
+    // === TOOL CRUD ===
+
+    private void OpenAddToolModal(int skillId)
+    {
+        _selectedSkillId = skillId;
+        _toolForm = new();
+ _showToolModal = true;
+    }
+
+    private async Task HandleToolSubmit()
+    {
+        _isSaving = true;
+    try
+    {
+            var dto = new ToolDto
+      {
+     Name = _toolForm.Name,
+     SkillId = _selectedSkillId
+       };
+
+            await ToolService.CreateAsync(dto);
+       ToastService.ShowSuccess($"✨ Tool '{dto.Name}' added!");
+
+  await LoadSkills();
+     CloseModals();
+        }
+catch (Exception ex)
+    {
+    ToastService.ShowError($"❌ Failed: {ex.Message}");
+   }
+        finally
+        {
+         _isSaving = false;
+  }
+  }
+
+    private async Task DeleteTool(int id)
+    {
+        try
+        {
+            await ToolService.DeleteAsync(id);
+            ToastService.ShowSuccess("✅ Tool deleted!");
+            await LoadSkills();
+        }
+   catch (Exception ex)
+        {
+   ToastService.ShowError($"❌ Failed: {ex.Message}");
+  }
+    }
+
+  private void CloseModals()
+    {
+        _showSkillModal = false;
+   _showToolModal = false;
+     _skillForm = new();
+        _toolForm = new();
+    }
+
+    // === FORM MODELS ===
+
+    private class SkillFormModel
+    {
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Name { get; set; } = string.Empty;
+        public int? PortfolioId { get; set; }
+        public string? ToolNames { get; set; }
+    }
+
+    private class ToolFormModel
+    {
+ [System.ComponentModel.DataAnnotations.Required]
+        public string Name { get; set; } = string.Empty;
+    }
+}

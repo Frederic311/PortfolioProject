@@ -1,0 +1,183 @@
+﻿@page "/admin/resume"
+@inject IAuthService AuthService
+@inject IResumeService ResumeService
+@inject NavigationManager Navigation
+@inject ToastService ToastService
+@using PortfolioApp.Shared.DTOs
+
+<PageTitle>Manage Resume</PageTitle>
+
+<div class="min-h-screen bg-[#101e22]">
+    <nav class="bg-white/5 border-b border-white/10">
+   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   <div class="flex items-center justify-between h-16">
+    <div class="flex items-center gap-3">
+     <a href="/admin/dashboard" class="text-gray-400 hover:text-white">← Dashboard</a>
+    <span class="text-gray-600">/</span>
+       <h1 class="text-white text-xl font-bold">Resume</h1>
+     </div>
+       </div>
+        </div>
+    </nav>
+
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        @if (_isLoading)
+   {
+      <div class="flex items-center justify-center py-24">
+    <svg class="animate-spin h-12 w-12 text-[#0db9f2]" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+   </svg>
+     </div>
+        }
+        else
+        {
+      <div class="bg-white/5 rounded-lg p-8 border border-white/10">
+     <h2 class="text-white text-2xl font-bold mb-6">Upload Resume/CV</h2>
+          
+         @if (_currentResume != null)
+              {
+     <div class="mb-6 p-4 bg-white/10 rounded-lg border border-white/20">
+         <div class="flex items-center justify-between">
+       <div class="flex items-center gap-3">
+           <span class="text-4xl">📄</span>
+          <div>
+    <p class="text-white font-medium">@_currentResume.FileName</p>
+           <p class="text-gray-400 text-sm">Uploaded @_currentResume.UploadedAt.ToString("MMM dd, yyyy")</p>
+       </div>
+  </div>
+       <button @onclick="DeleteResume" 
+              class="px-4 py-2 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-colors">
+  Delete
+   </button>
+  </div>
+       </div>
+         }
+       
+     <div class="space-y-4">
+   <label class="block text-sm font-medium text-gray-300 mb-2">
+           Upload New Resume (PDF)
+      </label>
+           <p class="text-xs text-gray-400 mb-4">Maximum file size: 5 MB. Only PDF files are supported.</p>
+   
+         <InputFile OnChange="HandleFileUpload" accept=".pdf" 
+         class="block w-full text-sm text-gray-300
+  file:mr-4 file:py-2 file:px-4
+           file:rounded-lg file:border-0
+  file:text-sm file:font-semibold
+         file:bg-[#0db9f2] file:text-[#101e22]
+   hover:file:opacity-90 file:cursor-pointer
+          cursor-pointer border border-white/20 rounded-lg p-2 bg-white/10" />
+          
+         @if (_isUploading)
+ {
+      <div class="mt-4 text-center">
+  <svg class="animate-spin h-8 w-8 mx-auto text-[#0db9f2]" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+       <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+         </svg>
+  <p class="mt-2 text-gray-400">Uploading...</p>
+    </div>
+       }
+      </div>
+  </div>
+      }
+    </div>
+</div>
+
+@code {
+    private bool _isLoading = true;
+    private bool _isUploading = false;
+    private ResumeDto? _currentResume;
+    private const long MaxFileSize = 5 * 1024 * 1024; // 5 MB
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+   if (firstRender)
+        {
+   if (!await AuthService.IsAuthenticatedAsync())
+            {
+      Navigation.NavigateTo("/admin");
+    return;
+     }
+            await LoadResume();
+     _isLoading = false;
+       StateHasChanged();
+        }
+    }
+
+    private async Task LoadResume()
+    {
+  try
+        {
+      _currentResume = await ResumeService.GetByPortfolioIdAsync(1);
+        }
+ catch (Exception ex)
+ {
+      Console.WriteLine($"Error loading resume: {ex.Message}");
+        }
+    }
+
+  private async Task HandleFileUpload(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+  if (file == null) return;
+
+        if (file.Size > MaxFileSize)
+   {
+     ToastService.ShowError($"File size ({file.Size / 1024 / 1024:F2} MB) exceeds maximum 5 MB");
+         return;
+        }
+
+        if (file.ContentType != "application/pdf")
+   {
+         ToastService.ShowError("Only PDF files are supported");
+     return;
+        }
+
+        _isUploading = true;
+        try
+        {
+            var buffer = new byte[file.Size];
+      await file.OpenReadStream(MaxFileSize).ReadAsync(buffer);
+  var base64 = Convert.ToBase64String(buffer);
+  var dataUrl = $"data:{file.ContentType};base64,{base64}";
+
+ var dto = new ResumeDto
+        {
+         FileName = file.Name,
+       FileContentBase64 = dataUrl,
+        ContentType = file.ContentType,
+     PortfolioId = 1
+   };
+
+      await ResumeService.UploadAsync(dto);
+     ToastService.ShowSuccess($"✨ Resume uploaded! ({file.Size / 1024:F0} KB)");
+       await LoadResume();
+        }
+        catch (Exception ex)
+        {
+ ToastService.ShowError($"Failed to upload: {ex.Message}");
+        }
+        finally
+        {
+       _isUploading = false;
+        }
+    }
+
+    private async Task DeleteResume()
+ {
+        if (_currentResume == null) return;
+
+   try
+        {
+      await ResumeService.DeleteAsync(_currentResume.Id);
+       ToastService.ShowSuccess("✅ Resume deleted!");
+   _currentResume = null;
+        }
+        catch (Exception ex)
+        {
+      ToastService.ShowError($"Failed to delete: {ex.Message}");
+        }
+}
+}

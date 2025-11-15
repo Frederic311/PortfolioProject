@@ -1,0 +1,357 @@
+﻿@page "/admin/projects"
+@inject IAuthService AuthService
+@inject IProjectService ProjectService
+@inject NavigationManager Navigation
+@inject ToastService ToastService
+@using PortfolioApp.Shared.DTOs
+
+<PageTitle>Manage Projects</PageTitle>
+
+<div class="min-h-screen bg-[#101e22]">
+    <!-- Top Navigation -->
+    <nav class="bg-white/5 border-b border-white/10">
+   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+         <div class="flex items-center justify-between h-16">
+      <div class="flex items-center gap-3">
+<a href="/admin/dashboard" class="text-gray-400 hover:text-white">← Dashboard</a>
+      <span class="text-gray-600">/</span>
+    <h1 class="text-white text-xl font-bold">Projects</h1>
+      </div>
+    <button @onclick="OpenAddModal" class="px-4 py-2 rounded-lg bg-[#0db9f2] text-[#101e22] font-semibold hover:opacity-90 transition-opacity">
++ Add Project
+   </button>
+         </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        @if (_isLoading)
+        {
+      <div class="flex items-center justify-center py-24">
+        <div class="text-center">
+        <svg class="animate-spin h-12 w-12 mx-auto text-[#0db9f2]" fill="none" viewBox="0 0 24 24">
+       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+       <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+       </svg>
+     <p class="mt-4 text-gray-400">Loading projects...</p>
+    </div>
+       </div>
+ }
+      else if (!_projects.Any())
+{
+  <div class="text-center py-24">
+  <p class="text-gray-400 mb-4">No projects yet</p>
+     <button @onclick="OpenAddModal" class="px-6 py-3 rounded-lg bg-[#0db9f2] text-[#101e22] font-semibold hover:opacity-90">
+        Create Your First Project
+         </button>
+ </div>
+}
+        else
+  {
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+@foreach (var project in _projects)
+{
+<div class="rounded-lg bg-white/5 border border-white/10 overflow-hidden">
+  @if (!string.IsNullOrEmpty(project.ImageUrl))
+  {
+   <div class="aspect-video bg-cover bg-center" style="background-image: url('@project.ImageUrl')"></div>
+      }
+         <div class="p-6">
+      <h3 class="text-white font-bold text-lg mb-2">@(project.Title ?? project.Name)</h3>
+  <p class="text-gray-400 text-sm mb-4 line-clamp-2">@project.Description</p>
+          <div class="flex gap-2">
+   <button @onclick="() => OpenEditModal(project)" class="flex-1 px-3 py-2 rounded bg-white/10 text-white text-sm hover:bg-white/20 transition-colors">
+  Edit
+          </button>
+  <button @onclick="() => DeleteProject(project.Id)" class="px-3 py-2 rounded bg-red-500/20 text-red-300 text-sm hover:bg-red-500/30 transition-colors">
+      Delete
+          </button>
+           </div>
+  </div>
+        </div>
+         }
+            </div>
+        }
+    </div>
+
+    <!-- Modal -->
+    @if (_showModal)
+    {
+  <div class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" @onclick="CloseModal">
+         <div class="bg-[#101e22] rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-white/10" @onclick:stopPropagation>
+      <h2 class="text-white text-2xl font-bold mb-6">@(_editingProject == null ? "Add Project" : "Edit Project")</h2>
+ 
+    <EditForm Model="@_formModel" OnValidSubmit="HandleSubmit" FormName="projectForm" class="space-y-4">
+         <DataAnnotationsValidator />
+
+    <div>
+      <label class="block text-sm font-medium text-gray-300 mb-2">Title</label>
+      <InputText @bind-Value="_formModel.Title" class="w-full px-4 py-2 rounded-lg bg-white/10 text-white border border-white/20 focus:ring-2 focus:ring-[#0db9f2] outline-none" />
+    <ValidationMessage For="@(() => _formModel.Title)" class="text-red-300 text-sm mt-1" />
+      </div>
+
+           <div>
+     <label class="block text-sm font-medium text-gray-300 mb-2">Description</label>
+     <InputTextArea @bind-Value="_formModel.Description" rows="4" class="w-full px-4 py-2 rounded-lg bg-white/10 text-white border border-white/20 focus:ring-2 focus:ring-[#0db9f2] outline-none" />
+        <ValidationMessage For="@(() => _formModel.Description)" class="text-red-300 text-sm mt-1" />
+   </div>
+
+       <div>
+   <label class="block text-sm font-medium text-gray-300 mb-2">Technologies (comma-separated)</label>
+   <InputText @bind-Value="_formModel.Technologies" class="w-full px-4 py-2 rounded-lg bg-white/10 text-white border border-white/20 focus:ring-2 focus:ring-[#0db9f2] outline-none" placeholder="React, Node.js, MongoDB" />
+    </div>
+
+       <div>
+     <label class="block text-sm font-medium text-gray-300 mb-2">Project Image</label>
+            <p class="text-xs text-gray-400 mb-2">Maximum file size: 5 MB. Supported formats: JPG, PNG, GIF, WebP</p>
+
+      <div class="space-y-3">
+    <InputFile OnChange="HandleImageUpload" accept="image/*" 
+ class="block w-full text-sm text-gray-300
+  file:mr-4 file:py-2 file:px-4
+      file:rounded-lg file:border-0
+      file:text-sm file:font-semibold
+ file:bg-[#0db9f2] file:text-[#101e22]
+  hover:file:opacity-90 file:cursor-pointer
+     cursor-pointer border border-white/20 rounded-lg p-2 bg-white/10" />
+  
+   @if (!string.IsNullOrEmpty(_imagePreview))
+ {
+    <div class="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/10">
+     <div class="flex-shrink-0">
+       <img src="@_imagePreview" 
+    alt="Project Preview" 
+          class="w-16 h-16 rounded-full object-cover border-2 border-[#0db9f2] shadow-md" />
+      </div>
+ 
+   <div class="flex-1 flex items-center justify-between">
+ <div>
+     <p class="text-sm text-gray-300 font-medium">Project Image</p>
+      <p class="text-xs text-gray-400">Ready to save</p>
+  </div>
+   <button type="button" 
+ @onclick="ClearImage" 
+ class="px-3 py-1.5 rounded-lg bg-red-500/20 text-red-300 text-xs hover:bg-red-500/30 transition-colors flex items-center gap-1.5">
+  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    </svg>
+         Remove
+   </button>
+    </div>
+  </div>
+   }
+     </div>
+    </div>
+
+         <div>
+     <label class="block text-sm font-medium text-gray-300 mb-2">GitHub URL</label>
+    <InputText @bind-Value="_formModel.GithubUrl" class="w-full px-4 py-2 rounded-lg bg-white/10 text-white border border-white/20 focus:ring-2 focus:ring-[#0db9f2] outline-none" placeholder="https://github.com/..." />
+    </div>
+
+           <div>
+        <label class="block text-sm font-medium text-gray-300 mb-2">Live URL</label>
+  <InputText @bind-Value="_formModel.LiveUrl" class="w-full px-4 py-2 rounded-lg bg-white/10 text-white border border-white/20 focus:ring-2 focus:ring-[#0db9f2] outline-none" placeholder="https://..." />
+  </div>
+
+  <div class="flex gap-3 pt-4">
+   <button type="submit" disabled="@_isSaving" class="flex-1 px-4 py-2 rounded-lg bg-[#0db9f2] text-[#101e22] font-semibold hover:opacity-90 disabled:opacity-50">
+  @(_isSaving ? "Saving..." : "Save")
+       </button>
+      <button type="button" @onclick="CloseModal" class="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20">
+  Cancel
+   </button>
+          </div>
+    </EditForm>
+ </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<ProjectDto> _projects = new();
+  private bool _isLoading = true;
+private bool _showModal = false;
+    private bool _isSaving = false;
+    private ProjectDto? _editingProject;
+    private ProjectFormModel _formModel = new();
+    private string? _imagePreview;
+    private const long MaxFileSize = 5 * 1024 * 1024; // 5 MB
+
+  protected override async Task OnAfterRenderAsync(bool firstRender)
+ {
+ if (firstRender)
+        {
+     if (!await AuthService.IsAuthenticatedAsync())
+    {
+    Navigation.NavigateTo("/admin");
+   return;
+            }
+      await LoadProjects();
+        }
+    }
+
+    private async Task LoadProjects()
+    {
+   _isLoading = true;
+        try
+        {
+  _projects = await ProjectService.GetAllAsync();
+ }
+   catch (Exception ex)
+      {
+     ToastService.ShowError($"Failed to load projects: {ex.Message}");
+ }
+     finally
+        {
+    _isLoading = false;
+       StateHasChanged();
+        }
+    }
+
+    private void OpenAddModal()
+    {
+   _editingProject = null;
+  _formModel = new();
+        _imagePreview = null;
+        _showModal = true;
+    }
+
+    private void OpenEditModal(ProjectDto project)
+    {
+        _editingProject = project;
+   _formModel = new()
+ {
+       Title = project.Title ?? project.Name,
+      Description = project.Description,
+   Technologies = project.Technologies,
+     ImageUrl = project.ImageUrl,
+    GithubUrl = project.GithubUrl,
+     LiveUrl = project.LiveUrl,
+        PortfolioId = project.PortfolioId
+   };
+        _imagePreview = project.ImageUrl;
+     _showModal = true;
+    }
+
+    private void CloseModal()
+    {
+ _showModal = false;
+_formModel = new();
+_editingProject = null;
+_imagePreview = null;
+    }
+
+    private async Task HandleImageUpload(InputFileChangeEventArgs e)
+    {
+   var file = e.File;
+ if (file == null) return;
+
+      if (file.Size > MaxFileSize)
+        {
+       ToastService.ShowError($"File size ({file.Size / 1024 / 1024:F2} MB) exceeds maximum 5 MB");
+   return;
+        }
+
+ var allowedTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp" };
+        if (!allowedTypes.Contains(file.ContentType.ToLower()))
+  {
+ToastService.ShowError("Invalid file type. Please upload JPG, PNG, GIF, or WebP");
+            return;
+   }
+
+ try
+  {
+      var buffer = new byte[file.Size];
+   await file.OpenReadStream(MaxFileSize).ReadAsync(buffer);
+            var base64 = Convert.ToBase64String(buffer);
+      var dataUrl = $"data:{file.ContentType};base64,{base64}";
+         _formModel.ImageUrl = dataUrl;
+     _imagePreview = dataUrl;
+      ToastService.ShowSuccess($"✨ Image uploaded! ({file.Size / 1024:F0} KB)");
+        }
+     catch (Exception ex)
+        {
+       ToastService.ShowError($"Failed to upload: {ex.Message}");
+     }
+  }
+
+    private void ClearImage()
+    {
+_formModel.ImageUrl = null;
+        _imagePreview = null;
+        ToastService.ShowInfo("🗑️ Image removed");
+    }
+
+    private async Task HandleSubmit()
+    {
+ _isSaving = true;
+        try
+        {
+  var dto = new ProjectDto
+    {
+       Name = _formModel.Title,
+      Title = _formModel.Title,
+ Description = _formModel.Description,
+      Technologies = _formModel.Technologies,
+     ImageUrl = _formModel.ImageUrl,
+ GithubUrl = _formModel.GithubUrl,
+      LiveUrl = _formModel.LiveUrl,
+      PortfolioId = _formModel.PortfolioId ?? 1,
+       StartDate = DateTime.UtcNow,
+  Status = PortfolioApp.Shared.Enums.ProjectStatus.Termine
+     };
+
+     if (_editingProject != null)
+   {
+   await ProjectService.UpdateAsync(_editingProject.Id, dto);
+     ToastService.ShowSuccess("✅ Project updated successfully!");
+      }
+   else
+   {
+  await ProjectService.CreateAsync(dto);
+       ToastService.ShowSuccess("🎉 Project created successfully!");
+   }
+
+await LoadProjects();
+       CloseModal();
+     }
+  catch (Exception ex)
+{
+    ToastService.ShowError($"❌ Failed to save: {ex.Message}");
+ }
+        finally
+ {
+    _isSaving = false;
+ }
+    }
+
+    private async Task DeleteProject(int id)
+    {
+        try
+   {
+    await ProjectService.DeleteAsync(id);
+       ToastService.ShowSuccess("✅ Project deleted!");
+    await LoadProjects();
+  }
+        catch (Exception ex)
+ {
+            ToastService.ShowError($"❌ Failed to delete: {ex.Message}");
+  }
+    }
+
+    private class ProjectFormModel
+  {
+      [System.ComponentModel.DataAnnotations.Required]
+      public string Title { get; set; } = string.Empty;
+
+     [System.ComponentModel.DataAnnotations.Required]
+public string Description { get; set; } = string.Empty;
+
+public string? Technologies { get; set; }
+        public string? ImageUrl { get; set; }
+public string? GithubUrl { get; set; }
+   public string? LiveUrl { get; set; }
+   public int? PortfolioId { get; set; }
+    }
+}

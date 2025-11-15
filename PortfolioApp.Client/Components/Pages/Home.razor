@@ -1,0 +1,344 @@
+﻿@page "/"
+@inject IPortfolioService PortfolioService
+@inject IProjectService ProjectService
+@inject ISkillService SkillService
+@inject IToolService ToolService
+@inject IContactService ContactService
+@inject ToastService ToastService
+@using PortfolioApp.Shared.DTOs
+
+<PageTitle>Portfolio</PageTitle>
+
+<HeadContent>
+    <meta name="description" content="Explore my professional portfolio showcasing my projects, technical skills, and tools. Get in touch for collaboration opportunities." />
+</HeadContent>
+
+<div class="relative w-full bg-[#101e22] text-gray-300">
+    <!-- TopNavBar - Sticky -->
+    <header class="sticky top-0 z-50 flex items-center justify-center bg-[#101e22]/80 backdrop-blur-sm">
+        <div class="flex w-full max-w-6xl items-center justify-between px-4 py-3 md:px-8">
+          <a class="flex items-center gap-3 text-white" href="#home">
+     <img src="logo_p.png?v=2" 
+          alt="Portfolio Logo" 
+       style="width: 28px; height: 28px; object-fit: contain; border-radius: 4px;" />
+    <h2 class="text-lg leading-tight font-bold tracking-[-0.015em] text-white">@(_portfolio?.Name ?? "Portfolio")</h2>
+  </a>
+      <div class="hidden items-center gap-8 md:flex">
+  <a class="text-sm leading-normal font-medium text-white transition-colors hover:text-[#0db9f2]" href="#about">About</a>
+   <a class="text-sm leading-normal font-medium text-white transition-colors hover:text-[#0db9f2]" href="#projects">Projects</a>
+   <a class="text-sm leading-normal font-medium text-white transition-colors hover:text-[#0db9f2]" href="#skills">Skills</a>
+<a class="text-sm leading-normal font-medium text-white transition-colors hover:text-[#0db9f2]" href="#contact">Contact</a>
+</div>
+<div class="flex gap-2">
+        <a href="https://portfolio-api-5g1wo3.azurewebsites.net/api/resumes/download/1" download 
+      class="flex h-10 max-w-[480px] min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-full bg-[#0db9f2] px-4 text-sm leading-normal font-bold tracking-[0.015em] text-[#101e22] transition-opacity hover:opacity-90">
+ <span class="truncate">Download Résumé</span>
+    </a>
+   </div>
+    </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex flex-col items-center px-4 py-10 md:px-8">
+        <div class="w-full max-w-6xl">
+            @if (_isLoading)
+            {
+            <!-- Loading State -->
+            <div class="flex items-center justify-center py-24">
+                <div class="text-center">
+                    <svg class="mx-auto h-12 w-12 animate-spin text-[#0db9f2]" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p class="mt-4 text-gray-400">Loading portfolio...</p>
+                </div>
+            </div>
+            }
+            else
+            {
+            <!-- Hero Section -->
+            <section class="py-16 md:py-24" id="about">
+    <div class="grid grid-cols-1 gap-12 lg:grid-cols-5 lg:gap-16">
+        <div class="flex items-center justify-center lg:col-span-2">
+   <div class="h-64 w-64 rounded-full bg-cover bg-center bg-no-repeat ring-4 ring-[#0db9f2]/20 md:h-80 md:w-80"
+       style="background-image: url('@(_portfolio?.ProfileImage ?? "https://via.placeholder.com/400")')"></div>
+     </div>
+                    <div class="flex flex-col justify-center gap-6 text-center lg:col-span-3 lg:text-left">
+    <div class="flex flex-col gap-2">
+        <h1 class="text-4xl leading-tight font-black tracking-[-0.033em] text-white md:text-6xl">
+   @(_portfolio?.Role ?? "Your Role")
+  </h1>
+    <h2 class="text-base leading-normal font-normal text-gray-300 md:text-lg">
+       @(_portfolio?.Title ?? "Small title")
+             </h2>
+         </div>
+            <div class="mt-4 w-full rounded-lg border border-white/10 bg-white/5 p-6 shadow-lg backdrop-blur-lg">
+  <p class="mb-6 text-base leading-relaxed font-normal text-gray-300">
+ @(_portfolio?.Bio ?? "Loading...")
+     </p>
+                            @if (!string.IsNullOrEmpty(_portfolio?.ContactEmail) || !string.IsNullOrEmpty(_portfolio?.Github) || !string.IsNullOrEmpty(_portfolio?.LinkedIn))
+                            {
+                            <div class="flex items-center justify-center gap-4 lg:justify-start">
+                                @if (!string.IsNullOrEmpty(_portfolio?.Github))
+                                {
+                                <a class="group flex w-20 flex-col items-center gap-2 text-center" href="@_portfolio.Github" target="_blank">
+                                    <div class="rounded-full bg-white/10 p-3 transition-colors group-hover:bg-[#0db9f2]">
+                                        <span class="text-2xl text-white">💻</span>
+                                    </div>
+                                    <span class="text-xs text-gray-300 transition-colors group-hover:text-white">GitHub</span>
+                                </a>
+                                }
+                                @if (!string.IsNullOrEmpty(_portfolio?.LinkedIn))
+                                {
+                                <a class="group flex w-20 flex-col items-center gap-2 text-center" href="@_portfolio.LinkedIn" target="_blank">
+                                    <div class="rounded-full bg-white/10 p-3 transition-colors group-hover:bg-[#0db9f2]">
+                                        <span class="text-2xl text-white">🔗</span>
+                                    </div>
+                                    <span class="text-xs text-gray-300 transition-colors group-hover:text-white">LinkedIn</span>
+                                </a>
+                                }
+                                @if (!string.IsNullOrEmpty(_portfolio?.ContactEmail))
+                                {
+                                <a class="group flex w-20 flex-col items-center gap-2 text-center" href="mailto:@_portfolio.ContactEmail">
+                                    <div class="rounded-full bg-white/10 p-3 transition-colors group-hover:bg-[#0db9f2]">
+                                        <span class="text-2xl text-white">📧</span>
+                                    </div>
+                                    <span class="text-xs text-gray-300 transition-colors group-hover:text-white">Email</span>
+                                </a>
+                                }
+                            </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Featured Projects Section -->
+            <section class="py-16 md:py-24" id="projects">
+                <h2 class="pb-8 text-center text-3xl leading-tight font-bold tracking-[-0.015em] text-white md:text-4xl">Featured Projects</h2>
+             <div class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+       @if (_projects.Any())
+          {
+         @foreach (var project in _projects.Take(6))
+     {
+      <div class="flex flex-col overflow-hidden rounded-lg border border-white/10 bg-white/5 shadow-lg transition-transform hover:-translate-y-1">
+          <div class="aspect-video w-full bg-cover bg-center bg-no-repeat"
+   style="background-image: url('@(project.ImageUrl ?? "https://via.placeholder.com/400x300")')"></div>
+   <div class="flex flex-grow flex-col p-6">
+        <h3 class="mb-2 text-xl font-bold text-white">@project.Title</h3>
+ <p class="mb-4 flex-grow text-sm text-gray-400">@project.Description</p>
+          <div class="mb-4 flex flex-wrap gap-2">
+  @if (!string.IsNullOrEmpty(project.Technologies))
+       {
+                 @foreach (var tech in project.Technologies.Split(',').Take(3))
+                   {
+              <span class="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-medium text-[#0db9f2] shadow-lg backdrop-blur-md">
+      @tech.Trim()
+     </span>
+   }
+       }
+              </div>
+       <div class="mt-auto flex gap-4">
+    @if (!string.IsNullOrEmpty(project.GithubUrl))
+             {
+      <a href="@project.GithubUrl" target="_blank" class="flex h-10 flex-1 items-center justify-center rounded-full bg-white/10 px-4 text-sm font-bold text-white transition-colors hover:bg-white/20">View Code</a>
+           }
+       @if (!string.IsNullOrEmpty(project.LiveUrl))
+      {
+       <a href="@project.LiveUrl" target="_blank" class="flex h-10 flex-1 items-center justify-center rounded-full bg-[#0db9f2] px-4 text-sm font-bold text-[#101e22] transition-opacity hover:opacity-90">Live Demo</a>
+}
+     </div>
+         </div>
+     </div>
+         }
+   }
+              else
+          {
+       <div class="col-span-3 py-12 text-center">
+         <p class="text-gray-400">No projects found.</p>
+         </div>
+    }
+         </div>
+            </section>
+
+            <!-- Skills & Tools Section -->
+      <section class="py-16 md:py-24" id="skills">
+     <h2 class="pb-8 text-center text-3xl leading-tight font-bold tracking-[-0.015em] text-white md:text-4xl">Skills & Tools</h2>
+          <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+   @if (_skills.Any())
+ {
+            @foreach (var skill in _skills)
+         {
+             <div class="rounded-lg border border-white/10 bg-white/5 p-6">
+       <h3 class="mb-4 text-lg font-bold text-white">@skill.Name</h3>
+ <div class="flex flex-wrap gap-2">
+        @if (skill.Tools != null && skill.Tools.Any())
+              {
+        @foreach (var tool in skill.Tools)
+  {
+     <span class="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm font-medium text-gray-300 shadow-lg backdrop-blur-md">
+            @tool.Name
+       </span>
+           }
+     }
+        else
+         {
+            <p class="text-sm text-gray-400">No tools added yet.</p>
+        }
+         </div>
+                  </div>
+          }
+      }
+     else
+ {
+          <div class="col-span-3 py-12 text-center">
+           <p class="text-gray-400">No skills added yet.</p>
+           </div>
+                }
+   </div>
+            </section>
+
+ <!-- Contact Section -->
+      <section class="py-16 md:py-24" id="contact">
+       <div class="mx-auto max-w-3xl text-center">
+<h2 class="pb-4 text-3xl leading-tight font-bold tracking-[-0.015em] text-white md:text-4xl">Get In Touch</h2>
+         <p class="mb-8 text-gray-400">Have a project in mind or just want to say hi? Feel free to reach out!</p>
+
+     @if (_messageSent)
+            {
+     <div class="mb-6 rounded-lg border border-green-400/30 bg-green-500/20 p-4 text-green-100">
+             <p>Message sent successfully! I'll get back to you soon.</p>
+     </div>
+         }
+
+   @if (!string.IsNullOrEmpty(_contactError))
+{
+     <div class="mb-6 rounded-lg border border-red-400/30 bg-red-500/20 p-4 text-red-100">
+   <p>@_contactError</p>
+ </div>
+       }
+
+         <EditForm Model="@_contactForm" OnValidSubmit="HandleContactSubmit" FormName="contact" class="space-y-6">
+       <DataAnnotationsValidator />
+             <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+           <InputText @bind-Value="_contactForm.Name" class="placeholder-gray-500 h-12 w-full rounded-full border border-white/20 bg-white/5 px-4 text-white transition outline-none focus:border-[#0db9f2] focus:ring-2 focus:ring-[#0db9f2]" placeholder="Your Name" />
+         <InputText @bind-Value="_contactForm.Email" class="placeholder-gray-500 h-12 w-full rounded-full border border-white/20 bg-white/5 px-4 text-white transition outline-none focus:border-[#0db9f2] focus:ring-2 focus:ring-[#0db9f2]" placeholder="Your Email" type="email" />
+</div>
+      <InputTextArea @bind-Value="_contactForm.Message" class="placeholder-gray-500 w-full rounded-lg border border-white/20 bg-white/5 p-4 text-white transition outline-none focus:border-[#0db9f2] focus:ring-2 focus:ring-[#0db9f2]" placeholder="Your Message" rows="5" />
+            <button type="submit" disabled="@_sendingMessage" class="mx-auto flex h-12 max-w-[480px] min-w-[120px] cursor-pointer items-center justify-center overflow-hidden rounded-full bg-[#0db9f2] px-5 text-base leading-normal font-bold tracking-[0.015em] text-[#101e22] transition-opacity hover:opacity-90 disabled:opacity-50">
+   @if (_sendingMessage)
+          {
+   <span>Sending...</span>
+  }
+         else
+    {
+   <span class="truncate">Send Message</span>
+         }
+      </button>
+     </EditForm>
+      </div>
+    </section>
+     }
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-[#101e22] py-4 text-gray-400">
+        <div class="container mx-auto text-center">
+            <p class="text-sm">
+                &copy; @DateTime.Now.Year - @(_portfolio?.Name ?? "My Portfolio"). All rights reserved.
+            </p>
+        </div>
+    </footer>
+</div>
+
+@code {
+    private PortfolioDto? _portfolio;
+    private List<ProjectDto> _projects = new();
+    private List<SkillDto> _skills = new();
+    private List<ToolDto> _tools = new();
+    private bool _isLoading = true;
+    private ContactFormModel _contactForm = new();
+    private bool _sendingMessage = false;
+    private bool _messageSent = false;
+    private string? _contactError;
+
+    protected override async Task OnInitializedAsync()
+    {
+    await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        _isLoading = true;
+   try
+        {
+ // Load all data in parallel
+            var portfolioTask = PortfolioService.GetAllAsync();
+        var projectsTask = ProjectService.GetAllAsync();
+   var skillsTask = SkillService.GetAllAsync();
+         var toolsTask = ToolService.GetAllAsync();
+
+   await Task.WhenAll(portfolioTask, projectsTask, skillsTask, toolsTask);
+
+            var portfolios = await portfolioTask;
+            _portfolio = portfolios.FirstOrDefault();
+            _projects = await projectsTask;
+      _skills = await skillsTask;
+            _tools = await toolsTask;
+     }
+      catch (Exception)
+     {
+            // Silently fail
+   }
+   finally
+    {
+            _isLoading = false;
+ }
+    }
+
+    private async Task HandleContactSubmit()
+    {
+        _sendingMessage = true;
+        _contactError = null;
+        _messageSent = false;
+
+    try
+        {
+  var message = new ContactMessageDto
+      {
+     Name = _contactForm.Name,
+    Email = _contactForm.Email,
+                Message = _contactForm.Message,
+   PortfolioId = _portfolio?.Id ?? 1
+      };
+
+            await ContactService.SendContactMessageAsync(message);
+            _messageSent = true;
+       _contactForm = new(); // Reset form
+            ToastService.ShowSuccess("✅ Message sent successfully!");
+        }
+        catch (Exception)
+   {
+       _contactError = "Failed to send message. Please try again.";
+            ToastService.ShowError($"❌ {_contactError}");
+        }
+        finally
+        {
+         _sendingMessage = false;
+        }
+    }
+
+    private class ContactFormModel
+    {
+        [System.ComponentModel.DataAnnotations.Required]
+   public string Name { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required]
+  [System.ComponentModel.DataAnnotations.EmailAddress]
+        public string Email { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required]
+public string Message { get; set; } = string.Empty;
+    }
+}

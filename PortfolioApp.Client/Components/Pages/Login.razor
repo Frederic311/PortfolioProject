@@ -1,0 +1,134 @@
+﻿@page "/admin"
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@inject ToastService ToastService
+@using PortfolioApp.Shared.DTOs
+@using System.ComponentModel.DataAnnotations
+
+<PageTitle>Admin Login</PageTitle>
+
+<div class="flex min-h-screen items-center justify-center bg-[#101e22] p-6">
+    <div class="w-full max-w-md">
+        <div class="rounded-lg bg-white/5 p-8 shadow-2xl ring-1 ring-white/10 backdrop-blur-md">
+       <!-- Header -->
+            <div class="mb-8 text-center">
+       <h1 class="mb-2 text-3xl font-bold text-white">Admin Login</h1>
+        <p class="text-gray-400">Sign in to manage your portfolio</p>
+ </div>
+
+       <!-- Login Form -->
+   <EditForm Model="@_loginModel" OnValidSubmit="HandleLogin" FormName="login" class="space-y-6">
+                <DataAnnotationsValidator />
+
+ <!-- Username Field -->
+  <div>
+            <label for="username" class="mb-2 block text-sm font-medium text-gray-300">
+          Username
+          </label>
+                    <InputText 
+    id="username"
+ @bind-Value="_loginModel.Username"
+       class="w-full rounded-lg bg-white/10 px-4 py-3 text-white placeholder-gray-500 ring-1 ring-white/20 transition focus:bg-white/15 focus:outline-none focus:ring-2 focus:ring-[#0db9f2]"
+     placeholder="Enter username"
+             disabled="@_isLoading" />
+    <ValidationMessage For="@(() => _loginModel.Username)" class="mt-1 text-sm text-red-300" />
+     </div>
+
+      <!-- Password Field -->
+                <div>
+      <label for="password" class="mb-2 block text-sm font-medium text-gray-300">
+  Password
+ </label>
+   <InputText 
+     id="password"
+ type="password"
+        @bind-Value="_loginModel.Password"
+            class="w-full rounded-lg bg-white/10 px-4 py-3 text-white placeholder-gray-500 ring-1 ring-white/20 transition focus:bg-white/15 focus:outline-none focus:ring-2 focus:ring-[#0db9f2]"
+    placeholder="Enter password"
+        disabled="@_isLoading" />
+         <ValidationMessage For="@(() => _loginModel.Password)" class="mt-1 text-sm text-red-300" />
+       </div>
+
+       <!-- Submit Button -->
+    <button 
+      type="submit"
+      disabled="@_isLoading"
+                 class="w-full rounded-lg bg-[#0db9f2] px-5 py-3 font-semibold text-[#101e22] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">
+          @if (_isLoading)
+     {
+ <span class="flex items-center justify-center gap-2">
+        <svg class="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+    <span>Signing in...</span>
+            </span>
+           }
+       else
+  {
+      <span>Sign In</span>
+      }
+  </button>
+            </EditForm>
+
+            <!-- Back to Home -->
+   <div class="mt-6 text-center">
+    <a href="/" class="text-sm text-gray-400 hover:text-[#0db9f2] transition-colors">← Back to Portfolio</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private LoginModel _loginModel = new();
+    private bool _isLoading = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+   {
+       // Check if already authenticated
+     if (await AuthService.IsAuthenticatedAsync())
+   {
+           Navigation.NavigateTo("/admin/dashboard", forceLoad: true);
+        }
+        }
+    }
+
+    private async Task HandleLogin()
+    {
+  _isLoading = true;
+
+      try
+      {
+            var success = await AuthService.LoginAsync(_loginModel.Username, _loginModel.Password);
+
+    if (success)
+   {
+             ToastService.ShowSuccess("✅ Login successful!");
+  Navigation.NavigateTo("/admin/dashboard", forceLoad: true);
+       }
+  else
+   {
+ ToastService.ShowError("❌ Invalid username or password");
+            }
+     }
+        catch (Exception ex)
+   {
+    ToastService.ShowError("❌ Connection error - Please check if the API is running");
+        }
+        finally
+   {
+        _isLoading = false;
+  }
+  }
+
+  private class LoginModel
+  {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Username is required")]
+        public string Username { get; set; } = string.Empty;
+
+      [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Password is required")]
+        public string Password { get; set; } = string.Empty;
+    }
+}

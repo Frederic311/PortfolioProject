@@ -1,0 +1,53 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PortfolioApp</title>
+    <base href="/" />
+    <link rel="icon" type="image/png" href="/logo_p.png" />
+    <link rel="stylesheet" href="/app.css" />
+    <link rel="stylesheet" href="/PortfolioApp.Client.styles.css" />
+    <script>
+        // Redirect all 404s to index.html for SPA routing
+        sessionStorage.redirect = location.pathname + location.search + location.hash;
+    </script>
+</head>
+
+<body>
+    <div id="app">
+        <div class="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500">
+        <div class="text-white text-center">
+         <svg class="animate-spin h-16 w-16 mx-auto mb-4" fill="none" viewBox="0 0 24 24">
+       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+    <path class="opacity-75" fill="currentColor"
+    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+       </path>
+   </svg>
+       <p class="text-xl font-semibold">Loading...</p>
+         </div>
+    </div>
+    </div>
+
+ <div id="blazor-error-ui" class="fixed bottom-0 right-0 left-0 bg-red-600 text-white p-3 hidden">
+        An unhandled error has occurred.
+        <a href="" class="underline ml-2">Reload</a>
+        <a class="float-right cursor-pointer"
+   onclick="document.getElementById('blazor-error-ui').classList.add('hidden')">✖</a>
+    </div>
+
+    <script src="/_framework/blazor.webassembly.js"></script>
+    <script>
+        // Restore the URL after redirect from 404.html
+        (function(){
+   var redirect = sessionStorage.redirect;
+        delete sessionStorage.redirect;
+          if (redirect && redirect != location.pathname) {
+         history.replaceState(null, null, redirect);
+      }
+        })();
+    </script>
+</body>
+
+</html>
